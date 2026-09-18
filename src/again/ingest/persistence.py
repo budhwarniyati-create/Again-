@@ -10,13 +10,18 @@ from again.ingest.candidates import ResponseCandidate
 def persist_candidates(
     candidates: list[ResponseCandidate],
     db_path: Path | str = "data/user/again.db",
+    source_label: str = "CSV import",
 ) -> int:
     """Persist validated response candidates into the database."""
     imported_at = datetime.now(timezone.utc).isoformat()
     persisted = 0
 
     with connect(db_path) as connection:
-        source_id = _get_or_create_source(connection, imported_at)
+        source_id = _get_or_create_source(
+            connection,
+            imported_at,
+            source_label,
+        )
 
         for candidate in candidates:
             source_record_id = _get_or_create_source_record(
@@ -82,16 +87,20 @@ def persist_candidates(
     return persisted
 
 
-def _get_or_create_source(connection, imported_at: str) -> int:
-    """Create or reuse the CSV ingestion source."""
+def _get_or_create_source(
+    connection,
+    imported_at: str,
+    source_label: str,
+) -> int:
+    """Create or reuse a CSV ingestion source."""
     row = connection.execute(
         """
         SELECT id
         FROM sources
-        WHERE kind = 'csv'
-        ORDER BY id
+        WHERE kind = 'csv' AND uri_or_label = ?
         LIMIT 1
-        """
+        """,
+        (source_label,),
     ).fetchone()
 
     if row:
@@ -100,9 +109,9 @@ def _get_or_create_source(connection, imported_at: str) -> int:
     cursor = connection.execute(
         """
         INSERT INTO sources (kind, uri_or_label, imported_at)
-        VALUES ('csv', 'CSV import', ?)
+        VALUES ('csv', ?, ?)
         """,
-        (imported_at,),
+        (source_label, imported_at),
     )
     return int(cursor.lastrowid)
 
