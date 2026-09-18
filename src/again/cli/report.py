@@ -9,6 +9,7 @@ from again.analytics.baseline import (
     overall_accuracy,
     repeated_misses,
 )
+from again.patterns.detector import detect_repeated_miss_topics_across_sittings
 
 
 def print_report(db_path="data/user/again.db") -> None:
@@ -66,6 +67,18 @@ def print_report(db_path="data/user/again.db") -> None:
             f"{row['topic']}: {row['accuracy']:.1%} "
             f"({row['correct']}/{row['total']})"
         )
+
+    cross_sitting = detect_repeated_miss_topics_across_sittings(db_path)
+
+    print("\nRepeated misses across sittings:")
+    if not cross_sitting:
+        print("  None detected.")
+    else:
+        for row in cross_sitting:
+            print(
+                f"  {row['topic']}: missed in "
+                f"{row['sitting_count']} sittings"
+            )
 
     misses = repeated_misses(db_path)
 
