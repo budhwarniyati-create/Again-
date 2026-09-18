@@ -271,5 +271,45 @@ def _get_or_create_item(
             candidate.topic,
         ),
     )
-    return int(cursor.lastrowid)
+    item_id = int(cursor.lastrowid)
+    _record_item_provenance(connection, item_id, candidate)
+    return item_id
+
+
+def _record_item_provenance(
+    connection,
+    item_id: int,
+    candidate: ResponseCandidate,
+) -> None:
+    """Record the CSV origin of imported item fields."""
+    fields = {
+        "external_ref": candidate.external_ref,
+        "section": candidate.section,
+        "subject": candidate.subject,
+        "topic": candidate.topic,
+    }
+
+    for field_name, value in fields.items():
+        if value is None:
+            continue
+
+        connection.execute(
+            """
+            INSERT INTO field_provenance (
+                entity_type,
+                entity_id,
+                field_name,
+                origin,
+                confidence_qualitative
+            )
+            VALUES (?, ?, ?, ?, ?)
+            """,
+            (
+                "item",
+                item_id,
+                field_name,
+                "csv_import",
+                "direct",
+            ),
+        )
 
