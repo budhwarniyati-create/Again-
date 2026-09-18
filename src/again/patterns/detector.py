@@ -121,3 +121,55 @@ def detect_topic_accuracy_drops(
                 )
 
     return results
+
+def detect_topic_regressions(
+    db_path: Path | str = "data/user/again.db",
+) -> list[dict[str, str | int | float]]:
+    """Find topics that were correct in one sitting and later missed."""
+    with connect(db_path) as connection:
+        rows = connection.execute(
+            """
+            SELECT
+                items.topic AS topic,
+                sittings.id AS sitting_id,
+                sittings.label AS sitting,
+                sittings.taken_on,
+                responses.is_correct AS is_correct
+            FROM responses
+            JOIN sittings ON sittings.id = responses.sitting_id
+            JOIN items ON items.id = responses.item_id
+            WHERE items.topic IS NOT NULL
+            ORDER BY items.topic, sittings.taken_on, sittings.id, responses.id
+            """
+        ).fetchall()
+
+    by_topic: dict[str, list[dict[str, str | int]]] = {}
+
+    for row in rows:
+        by_topic.setdefault(row["topic"], []).append(
+            {
+                "sitting": row["sitting"],
+                "taken_on": row["taken_on"],
+                "is_correct": int(row["is_correct"]),
+            }
+        )
+
+    results: list[dict[str, str | int | float]] = []
+
+    for topic, attempts in by_topic.items():
+        had_previous_correct = False
+
+        for attempt in attempts:
+            if had_previous_correct and attempt["is_correct"] == 0:
+                results.append(
+                    {
+                        "topic": topic,
+                        "current_sitting": attempt["sitting"],
+                        "current_taken_on": attempt["taken_on"],
+                    }
+                )
+
+            if attempt["is_correct"] == 1:
+                had_previous_correct = True
+
+    return results
