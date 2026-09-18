@@ -21,6 +21,7 @@ def parse_csv(path: Path | str) -> list[ResponseCandidate]:
                     section=(row.get("section") or "").strip(),
                     subject=(row.get("subject") or "").strip(),
                     topic=(row.get("topic") or "").strip() or None,
+                    taken_on=(row.get("taken_on") or "").strip() or None,
                     external_ref=(row.get("external_ref") or "").strip() or None,
                     student_answer=(row.get("student_answer") or "").strip() or None,
                     is_correct=_parse_bool(row.get("is_correct")),

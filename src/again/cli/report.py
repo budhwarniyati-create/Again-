@@ -4,6 +4,7 @@ from again.analytics.baseline import (
     accuracy_by_section,
     accuracy_by_sitting,
     accuracy_by_topic,
+    accuracy_change_by_sitting,
     overall_accuracy,
     repeated_misses,
 )
@@ -44,6 +45,22 @@ def print_report(db_path="data/user/again.db") -> None:
             f"({row['accuracy']:.1%})"
         )
 
+    changes = accuracy_change_by_sitting(db_path)
+
+    print("\nAccuracy change:")
+    for row in changes:
+        if row["accuracy_delta"] is None:
+            print(
+                f"  {row["sitting"]} ({row["taken_on"]}): "
+                f"{row["accuracy"]:.1%} (baseline)"
+            )
+        else:
+            print(
+                f"  {row["sitting"]} ({row["taken_on"]}): "
+                f"{row["accuracy"]:.1%} "
+                f"({row["accuracy_delta"]:+.1%})"
+            )
+
     misses = repeated_misses(db_path)
 
     print("\nRepeated misses:")
@@ -59,3 +76,6 @@ def print_report(db_path="data/user/again.db") -> None:
 
 if __name__ == "__main__":
     print_report()
+
+
+

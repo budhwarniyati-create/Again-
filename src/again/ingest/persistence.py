@@ -181,14 +181,18 @@ def _get_or_create_sitting(
     candidate: ResponseCandidate,
 ) -> int:
     """Create or reuse a sitting."""
+    taken_on = candidate.taken_on or datetime.now(timezone.utc).date().isoformat()
+
     row = connection.execute(
         """
         SELECT id
         FROM sittings
-        WHERE student_id = ? AND label = ?
+        WHERE student_id = ?
+          AND label = ?
+          AND taken_on = ?
         LIMIT 1
         """,
-        (student_id, candidate.sitting_label),
+        (student_id, candidate.sitting_label, taken_on),
     ).fetchone()
 
     if row:
@@ -206,7 +210,7 @@ def _get_or_create_sitting(
         """,
         (
             student_id,
-            datetime.now(timezone.utc).date().isoformat(),
+            taken_on,
             candidate.sitting_label,
             source_id,
         ),
@@ -312,4 +316,3 @@ def _record_item_provenance(
                 "direct",
             ),
         )
-

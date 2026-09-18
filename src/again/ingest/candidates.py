@@ -12,6 +12,7 @@ class ResponseCandidate:
     section: str
     subject: str
     topic: str | None
+    taken_on: str | None = None
     external_ref: str | None = None
     student_answer: str | None = None
     is_correct: bool | None = None

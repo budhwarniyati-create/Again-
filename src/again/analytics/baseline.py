@@ -145,3 +145,32 @@ def repeated_misses(
         }
         for row in rows
     ]
+
+def accuracy_change_by_sitting(
+    db_path: Path | str = "data/user/again.db",
+) -> list[dict[str, str | int | float | None]]:
+    """Calculate accuracy change from each sitting to the previous sitting."""
+    sittings = accuracy_by_sitting(db_path)
+
+    results: list[dict[str, str | int | float | None]] = []
+
+    for index, current in enumerate(sittings):
+        previous = sittings[index - 1] if index > 0 else None
+
+        results.append(
+            {
+                "sitting": current["sitting"],
+                "taken_on": current["taken_on"],
+                "accuracy": current["accuracy"],
+                "previous_accuracy": (
+                    previous["accuracy"] if previous else None
+                ),
+                "accuracy_delta": (
+                    current["accuracy"] - previous["accuracy"]
+                    if previous
+                    else None
+                ),
+            }
+        )
+
+    return results
