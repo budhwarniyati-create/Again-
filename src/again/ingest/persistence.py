@@ -219,24 +219,35 @@ def _get_or_create_item(
     source_id: int,
     candidate: ResponseCandidate,
 ) -> int:
-    """Create or reuse an item."""
-    row = connection.execute(
-        """
-        SELECT id
-        FROM items
-        WHERE source_id = ?
-          AND section = ?
-          AND subject = ?
-          AND topic IS ?
-        LIMIT 1
-        """,
-        (
-            source_id,
-            candidate.section,
-            candidate.subject,
-            candidate.topic,
-        ),
-    ).fetchone()
+    """Create or reuse an item using its stable external reference when available."""
+    if candidate.external_ref:
+        row = connection.execute(
+            """
+            SELECT id
+            FROM items
+            WHERE source_id = ? AND external_ref = ?
+            LIMIT 1
+            """,
+            (source_id, candidate.external_ref),
+        ).fetchone()
+    else:
+        row = connection.execute(
+            """
+            SELECT id
+            FROM items
+            WHERE source_id = ?
+              AND section = ?
+              AND subject = ?
+              AND topic IS ?
+            LIMIT 1
+            """,
+            (
+                source_id,
+                candidate.section,
+                candidate.subject,
+                candidate.topic,
+            ),
+        ).fetchone()
 
     if row:
         return int(row["id"])
@@ -245,17 +256,20 @@ def _get_or_create_item(
         """
         INSERT INTO items (
             source_id,
+            external_ref,
             section,
             subject,
             topic
         )
-        VALUES (?, ?, ?, ?)
+        VALUES (?, ?, ?, ?, ?)
         """,
         (
             source_id,
+            candidate.external_ref,
             candidate.section,
             candidate.subject,
             candidate.topic,
         ),
     )
     return int(cursor.lastrowid)
+

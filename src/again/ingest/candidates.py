@@ -1,4 +1,4 @@
-﻿"""Candidate records produced by Again? ingestion."""
+﻿"""Candidate records produced by Again?."""
 
 from dataclasses import dataclass
 
@@ -12,5 +12,6 @@ class ResponseCandidate:
     section: str
     subject: str
     topic: str | None
-    student_answer: str | None
-    is_correct: bool | None
+    external_ref: str | None = None
+    student_answer: str | None = None
+    is_correct: bool | None = None

@@ -1,4 +1,4 @@
-﻿sitting,section,subject,topic,student_answer,is_correct
-SAT Test 1,Math,Math,Linear equations,B,false
-SAT Test 1,Math,Math,Quadratics,C,true
-SAT Test 1,Reading and Writing,Reading and Writing,Transitions,A,true
+﻿sitting,section,subject,topic,external_ref,student_answer,is_correct
+SAT Test 1,Math,Math,Linear equations,SAT1-M-01,B,false
+SAT Test 1,Math,Math,Quadratics,SAT1-M-02,C,true
+SAT Test 1,Reading and Writing,Reading and Writing,Transitions,SAT1-RW-01,A,true
