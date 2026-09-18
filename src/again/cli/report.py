@@ -4,6 +4,7 @@ from again.analytics.baseline import (
     accuracy_by_section,
     accuracy_by_sitting,
     accuracy_by_topic,
+    accuracy_by_topic_over_time,
     accuracy_change_by_sitting,
     overall_accuracy,
     repeated_misses,
@@ -11,13 +12,12 @@ from again.analytics.baseline import (
 
 
 def print_report(db_path="data/user/again.db") -> None:
-    """Print a readable baseline report."""
+    """Print the baseline analytics report."""
     overall = overall_accuracy(db_path)
 
-    print("\n=== Again? Baseline Report ===\n")
-
+    print("=== Again? Baseline Report ===")
     print(
-        f"Overall: {overall['correct']}/{overall['total']} correct "
+        f"\nOverall: {overall['correct']}/{overall['total']} correct "
         f"({overall['accuracy']:.1%})"
     )
 
@@ -45,21 +45,27 @@ def print_report(db_path="data/user/again.db") -> None:
             f"({row['accuracy']:.1%})"
         )
 
-    changes = accuracy_change_by_sitting(db_path)
-
     print("\nAccuracy change:")
-    for row in changes:
+    for row in accuracy_change_by_sitting(db_path):
         if row["accuracy_delta"] is None:
             print(
-                f"  {row["sitting"]} ({row["taken_on"]}): "
-                f"{row["accuracy"]:.1%} (baseline)"
+                f"  {row['sitting']} ({row['taken_on']}): "
+                f"{row['accuracy']:.1%} (baseline)"
             )
         else:
             print(
-                f"  {row["sitting"]} ({row["taken_on"]}): "
-                f"{row["accuracy"]:.1%} "
-                f"({row["accuracy_delta"]:+.1%})"
+                f"  {row['sitting']} ({row['taken_on']}): "
+                f"{row['accuracy']:.1%} "
+                f"({row['accuracy_delta']:+.1%})"
             )
+
+    print("\nTopic accuracy over time:")
+    for row in accuracy_by_topic_over_time(db_path):
+        print(
+            f"  {row['sitting']} ({row['taken_on']}) - "
+            f"{row['topic']}: {row['accuracy']:.1%} "
+            f"({row['correct']}/{row['total']})"
+        )
 
     misses = repeated_misses(db_path)
 
@@ -70,12 +76,5 @@ def print_report(db_path="data/user/again.db") -> None:
         for row in misses:
             print(
                 f"  {row['topic']}: "
-                f"{row['misses']} misses [{row['status']}]"
+                f"{row['miss_count']} misses"
             )
-
-
-if __name__ == "__main__":
-    print_report()
-
-
-

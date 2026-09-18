@@ -1,6 +1,6 @@
 ﻿"""Tests for baseline analytics."""
 
-from again.analytics.baseline import accuracy_by_section, accuracy_by_sitting, accuracy_by_topic, accuracy_change_by_sitting, overall_accuracy, repeated_misses
+from again.analytics.baseline import accuracy_by_section, accuracy_by_sitting, accuracy_by_topic, accuracy_by_topic_over_time, accuracy_change_by_sitting, overall_accuracy, repeated_misses
 from again.db.initialize import initialize_database
 from again.ingest.csv import parse_csv
 from again.ingest.candidates import ResponseCandidate
@@ -223,3 +223,69 @@ def test_accuracy_change_by_sitting(tmp_path):
     assert result[1]["previous_accuracy"] == 0.5
     assert result[1]["accuracy_delta"] == 0.5
 
+
+
+def test_accuracy_by_topic_over_time(tmp_path):
+    db_path = tmp_path / "topic_time.db"
+    initialize_database(db_path)
+
+    candidates = [
+        ResponseCandidate(
+            source_row_key="row-2",
+            sitting_label="SAT Test 1",
+            section="Math",
+            subject="Math",
+            topic="Linear equations",
+            taken_on="2026-09-01",
+            external_ref="Q1",
+            student_answer="A",
+            is_correct=False,
+        ),
+        ResponseCandidate(
+            source_row_key="row-3",
+            sitting_label="SAT Test 1",
+            section="Math",
+            subject="Math",
+            topic="Linear equations",
+            taken_on="2026-09-01",
+            external_ref="Q2",
+            student_answer="B",
+            is_correct=True,
+        ),
+        ResponseCandidate(
+            source_row_key="row-4",
+            sitting_label="SAT Test 2",
+            section="Math",
+            subject="Math",
+            topic="Linear equations",
+            taken_on="2026-09-15",
+            external_ref="Q3",
+            student_answer="A",
+            is_correct=True,
+        ),
+    ]
+
+    persist_candidates(candidates, db_path)
+
+    result = accuracy_by_topic_over_time(db_path)
+
+    assert result == [
+        {
+            "sitting": "SAT Test 1",
+            "taken_on": "2026-09-01",
+            "topic": "Linear equations",
+            "total": 2,
+            "correct": 1,
+            "incorrect": 1,
+            "accuracy": 0.5,
+        },
+        {
+            "sitting": "SAT Test 2",
+            "taken_on": "2026-09-15",
+            "topic": "Linear equations",
+            "total": 1,
+            "correct": 1,
+            "incorrect": 0,
+            "accuracy": 1.0,
+        },
+    ]

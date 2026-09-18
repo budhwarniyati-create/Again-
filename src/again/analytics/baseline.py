@@ -174,3 +174,38 @@ def accuracy_change_by_sitting(
         )
 
     return results
+
+def accuracy_by_topic_over_time(
+    db_path: Path | str = "data/user/again.db",
+) -> list[dict[str, str | int | float]]:
+    """Calculate topic accuracy for each sitting in chronological order."""
+    with connect(db_path) as connection:
+        rows = connection.execute(
+            """
+            SELECT
+                sittings.label AS sitting,
+                sittings.taken_on,
+                items.topic AS topic,
+                COUNT(*) AS total,
+                SUM(responses.is_correct) AS correct
+            FROM responses
+            JOIN sittings ON sittings.id = responses.sitting_id
+            JOIN items ON items.id = responses.item_id
+            WHERE items.topic IS NOT NULL
+            GROUP BY sittings.id, items.topic
+            ORDER BY sittings.taken_on, sittings.id, items.topic
+            """
+        ).fetchall()
+
+    return [
+        {
+            "sitting": row["sitting"],
+            "taken_on": row["taken_on"],
+            "topic": row["topic"],
+            "total": int(row["total"]),
+            "correct": int(row["correct"] or 0),
+            "incorrect": int(row["total"]) - int(row["correct"] or 0),
+            "accuracy": int(row["correct"] or 0) / int(row["total"]),
+        }
+        for row in rows
+    ]
