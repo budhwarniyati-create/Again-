@@ -63,3 +63,61 @@ def detect_repeated_miss_topics_across_sittings(
         }
         for row in rows
     ]
+
+def detect_topic_accuracy_drops(
+    db_path: Path | str = "data/user/again.db",
+) -> list[dict[str, str | int | float]]:
+    """Find topics where accuracy decreased between consecutive sittings."""
+    with connect(db_path) as connection:
+        rows = connection.execute(
+            """
+            SELECT
+                sittings.id AS sitting_id,
+                sittings.label AS sitting,
+                sittings.taken_on,
+                items.topic AS topic,
+                COUNT(*) AS total,
+                SUM(responses.is_correct) AS correct
+            FROM responses
+            JOIN sittings ON sittings.id = responses.sitting_id
+            JOIN items ON items.id = responses.item_id
+            WHERE items.topic IS NOT NULL
+            GROUP BY sittings.id, items.topic
+            ORDER BY sittings.taken_on, sittings.id, items.topic
+            """
+        ).fetchall()
+
+    by_topic: dict[str, list[dict[str, str | int | float]]] = {}
+
+    for row in rows:
+        total = int(row["total"])
+        correct = int(row["correct"] or 0)
+        accuracy = correct / total
+
+        by_topic.setdefault(row["topic"], []).append(
+            {
+                "sitting": row["sitting"],
+                "taken_on": row["taken_on"],
+                "accuracy": accuracy,
+            }
+        )
+
+    results: list[dict[str, str | int | float]] = []
+
+    for topic, sittings in by_topic.items():
+        for previous, current in zip(sittings, sittings[1:]):
+            delta = float(current["accuracy"]) - float(previous["accuracy"])
+
+            if delta < 0:
+                results.append(
+                    {
+                        "topic": topic,
+                        "previous_sitting": previous["sitting"],
+                        "current_sitting": current["sitting"],
+                        "previous_accuracy": previous["accuracy"],
+                        "current_accuracy": current["accuracy"],
+                        "accuracy_delta": delta,
+                    }
+                )
+
+    return results
