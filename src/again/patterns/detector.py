@@ -173,3 +173,92 @@ def detect_topic_regressions(
                 had_previous_correct = True
 
     return results
+
+
+def detect_section_accuracy_drops(
+    db_path: Path | str = "data/user/again.db",
+) -> list[dict[str, str | int | float]]:
+    """Find sections where accuracy decreased between consecutive sittings."""
+    with connect(db_path) as connection:
+        rows = connection.execute(
+            """
+            SELECT
+                sittings.id AS sitting_id,
+                sittings.label AS sitting,
+                sittings.taken_on,
+                responses.id AS response_id,
+                items.section AS section,
+                responses.is_correct AS is_correct
+            FROM responses
+            JOIN sittings ON sittings.id = responses.sitting_id
+            JOIN items ON items.id = responses.item_id
+            WHERE items.section IS NOT NULL
+            ORDER BY items.section, sittings.taken_on, sittings.id, responses.id
+            """
+        ).fetchall()
+
+    by_section: dict[str, list[dict[str, str | int | float]]] = {}
+
+    for row in rows:
+        by_section.setdefault(row["section"], []).append(
+            {
+                "sitting": row["sitting"],
+                "taken_on": row["taken_on"],
+                "is_correct": int(row["is_correct"]),
+            }
+        )
+
+    results: list[dict[str, str | int | float]] = []
+
+    for section, attempts in by_section.items():
+        by_sitting: list[dict[str, str | int | float]] = []
+
+        current_sitting = None
+        current_correct = 0
+        current_total = 0
+        current_date = None
+
+        for attempt in attempts:
+            if current_sitting != attempt["sitting"]:
+                if current_sitting is not None:
+                    by_sitting.append(
+                        {
+                            "sitting": current_sitting,
+                            "taken_on": current_date,
+                            "accuracy": current_correct / current_total,
+                        }
+                    )
+
+                current_sitting = attempt["sitting"]
+                current_date = attempt["taken_on"]
+                current_correct = 0
+                current_total = 0
+
+            current_correct += int(attempt["is_correct"])
+            current_total += 1
+
+        if current_sitting is not None:
+            by_sitting.append(
+                {
+                    "sitting": current_sitting,
+                    "taken_on": current_date,
+                    "accuracy": current_correct / current_total,
+                }
+            )
+
+        for previous, current in zip(by_sitting, by_sitting[1:]):
+            delta = float(current["accuracy"]) - float(previous["accuracy"])
+
+            if delta < 0:
+                results.append(
+                    {
+                        "section": section,
+                        "previous_sitting": previous["sitting"],
+                        "current_sitting": current["sitting"],
+                        "previous_accuracy": previous["accuracy"],
+                        "current_accuracy": current["accuracy"],
+                        "accuracy_delta": delta,
+                    }
+                )
+
+    return results
