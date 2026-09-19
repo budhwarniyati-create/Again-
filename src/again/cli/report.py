@@ -13,6 +13,7 @@ from again.patterns.detector import (
     detect_repeated_miss_topics_across_sittings,
     detect_topic_accuracy_drops,
     detect_topic_regressions,
+    detect_section_accuracy_drops,
 )
 
 
@@ -86,7 +87,22 @@ def print_report(db_path="data/user/again.db") -> None:
                 f"({row['accuracy_delta']:+.1%})"
             )
 
+        section_drops = detect_section_accuracy_drops(db_path)
+    section_drops = detect_section_accuracy_drops(db_path)
+    print("\nSection accuracy drops:")
+    if not section_drops:
+        print("  None detected.")
+    else:
+        for row in section_drops:
+            print(
+                f"  {row['section']}: "
+                f"{row['previous_sitting']} {row['previous_accuracy']:.1%} -> "
+                f"{row['current_sitting']} {row['current_accuracy']:.1%} "
+                f"({row['accuracy_delta']:+.1%})"
+            )
+
     regressions = detect_topic_regressions(db_path)
+
 
     print("\nTopic regressions:")
     if not regressions:
