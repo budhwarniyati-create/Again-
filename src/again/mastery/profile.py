@@ -12,6 +12,7 @@ class MasteryEstimate:
     attempts: int
     correct: int
     confidence: float
+    status: str
 
 def estimate_mastery(
     topic: str,
@@ -25,8 +26,15 @@ def estimate_mastery(
     if not 0 <= correct <= attempts:
         raise ValueError("correct must be between 0 and attempts")
 
-    mastery = correct / attempts
-    confidence = min(attempts / 10, 1.0)
+    mastery = (correct + 1) / (attempts + 2)
+    confidence = 1 - (1 / (attempts + 1))
+
+    if mastery < 0.5:
+        status = "developing"
+    elif mastery < 0.75:
+        status = "established"
+    else:
+        status = "strong"
 
     return MasteryEstimate(
         topic=topic,
@@ -34,7 +42,8 @@ def estimate_mastery(
         attempts=attempts,
         correct=correct,
         confidence=confidence,
-    )   
+        status=status,
+    )
 from again.db.connection import connect
 
 

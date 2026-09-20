@@ -14,11 +14,11 @@ def test_estimate_mastery():
 
     assert isinstance(result, MasteryEstimate)
     assert result.topic == "Linear equations"
-    assert result.mastery == 0.8
+    assert result.mastery == 0.75
     assert result.attempts == 10
     assert result.correct == 8
-    assert result.confidence == 1.0
-
+    assert result.confidence == 10 / 11
+    assert result.status == "strong"
 
 def test_estimate_mastery_with_less_evidence():
     result = estimate_mastery(
@@ -27,9 +27,9 @@ def test_estimate_mastery_with_less_evidence():
         correct=2,
     )
 
-    assert result.mastery == 2 / 3
-    assert result.confidence == 0.3
-
+    assert result.mastery == 0.6
+    assert result.confidence == 0.75
+    assert result.status == "established"
 def test_build_mastery_profile():
     profile = build_mastery_profile()
 
@@ -37,3 +37,23 @@ def test_build_mastery_profile():
 
     assert "Linear equations" in topics
     assert topics["Linear equations"].attempts >= 1
+
+import pytest
+
+
+def test_estimate_mastery_rejects_zero_attempts():
+    with pytest.raises(ValueError):
+        estimate_mastery(
+            topic="Geometry",
+            attempts=0,
+            correct=0,
+        )
+
+
+def test_estimate_mastery_rejects_invalid_correct_count():
+    with pytest.raises(ValueError):
+        estimate_mastery(
+            topic="Geometry",
+            attempts=3,
+            correct=4,
+        )
