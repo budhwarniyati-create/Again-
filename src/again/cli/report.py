@@ -1,4 +1,6 @@
 ﻿"""Command-line baseline report for Again?."""
+
+from again.mastery.profile import build_mastery_profile
 from again.insights.patterns import get_learning_insights
 from again.analytics.baseline import (
     accuracy_by_section,
@@ -146,3 +148,17 @@ def print_report(db_path="data/user/again.db") -> None:
     else:
         for insight in insights:
             print(f"  [{insight.pattern_type}] {insight.message}")
+
+    mastery_profile = build_mastery_profile(db_path)
+
+    print("\nMastery profile:")
+    if not mastery_profile:
+        print("  No mastery data available.")
+    else:
+        for estimate in mastery_profile:
+            print(
+                f"  {estimate.topic}: "
+                f"{estimate.mastery:.1%} mastery "
+                f"({estimate.correct}/{estimate.attempts}, "
+                f"confidence {estimate.confidence:.1%})"
+            )
