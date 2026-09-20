@@ -2,6 +2,8 @@
 
 from dataclasses import dataclass
 
+from again.db.connection import connect
+
 
 @dataclass(frozen=True)
 class MasteryEstimate:
@@ -13,6 +15,19 @@ class MasteryEstimate:
     correct: int
     confidence: float
     status: str
+
+
+@dataclass(frozen=True)
+class TopicProfile:
+    """Learning profile for a single topic."""
+
+    topic: str
+    mastery: float
+    confidence: float
+    status: str
+    attempts: int
+    correct: int
+
 
 def estimate_mastery(
     topic: str,
@@ -44,7 +59,6 @@ def estimate_mastery(
         confidence=confidence,
         status=status,
     )
-from again.db.connection import connect
 
 
 def build_mastery_profile(
