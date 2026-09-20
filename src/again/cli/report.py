@@ -1,5 +1,5 @@
 ﻿"""Command-line baseline report for Again?."""
-
+from again.insights.patterns import get_learning_insights
 from again.analytics.baseline import (
     accuracy_by_section,
     accuracy_by_sitting,
@@ -137,3 +137,12 @@ def print_report(db_path="data/user/again.db") -> None:
                 f"  {row['topic']}: "
                 f"{row['miss_count']} misses"
             )
+
+    insights = get_learning_insights(db_path)
+
+    print("\nLearning insights:")
+    if not insights:
+        print("  None detected.")
+    else:
+        for insight in insights:
+            print(f"  [{insight.pattern_type}] {insight.message}")
