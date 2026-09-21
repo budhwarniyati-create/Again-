@@ -1,7 +1,5 @@
 ﻿"""Command-line baseline report for Again?."""
 
-from again.mastery.profile import build_mastery_profile
-from again.insights.patterns import get_learning_insights
 from again.analytics.baseline import (
     accuracy_by_section,
     accuracy_by_sitting,
@@ -11,11 +9,13 @@ from again.analytics.baseline import (
     overall_accuracy,
     repeated_misses,
 )
+from again.insights.patterns import get_learning_insights
+from again.mastery.profile import build_mastery_profile
 from again.patterns.detector import (
     detect_repeated_miss_topics_across_sittings,
+    detect_section_accuracy_drops,
     detect_topic_accuracy_drops,
     detect_topic_regressions,
-    detect_section_accuracy_drops,
 )
 
 
@@ -89,8 +89,8 @@ def print_report(db_path="data/user/again.db") -> None:
                 f"({row['accuracy_delta']:+.1%})"
             )
 
-        section_drops = detect_section_accuracy_drops(db_path)
     section_drops = detect_section_accuracy_drops(db_path)
+
     print("\nSection accuracy drops:")
     if not section_drops:
         print("  None detected.")
@@ -104,7 +104,6 @@ def print_report(db_path="data/user/again.db") -> None:
             )
 
     regressions = detect_topic_regressions(db_path)
-
 
     print("\nTopic regressions:")
     if not regressions:
@@ -137,7 +136,7 @@ def print_report(db_path="data/user/again.db") -> None:
         for row in misses:
             print(
                 f"  {row['topic']}: "
-                f"{row['miss_count']} misses"
+                f"{row['misses']} misses"
             )
 
     insights = get_learning_insights(db_path)
@@ -160,5 +159,7 @@ def print_report(db_path="data/user/again.db") -> None:
                 f"  {estimate.topic}: "
                 f"{estimate.mastery:.1%} mastery "
                 f"({estimate.correct}/{estimate.attempts}, "
-                f"confidence {estimate.confidence:.1%})"
+                f"confidence {estimate.confidence:.1%}, "
+                f"status {estimate.status}, "
+                f"recent {estimate.recent_accuracy:.1%})"
             )

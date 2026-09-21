@@ -15,6 +15,7 @@ class MasteryEstimate:
     correct: int
     confidence: float
     status: str
+    recent_accuracy: float | None = None
 
 
 @dataclass(frozen=True)
@@ -80,11 +81,61 @@ def build_mastery_profile(
             """
         ).fetchall()
 
-    return [
-        estimate_mastery(
+    profile = []
+
+    for row in rows:
+        estimate = estimate_mastery(
             topic=row["topic"],
             attempts=int(row["attempts"]),
             correct=int(row["correct"] or 0),
         )
-        for row in rows
-    ]
+
+        profile.append(
+            MasteryEstimate(
+                topic=estimate.topic,
+                mastery=estimate.mastery,
+                attempts=estimate.attempts,
+                correct=estimate.correct,
+                confidence=estimate.confidence,
+                status=estimate.status,
+                recent_accuracy=recent_topic_accuracy(
+                    row["topic"],
+                    db_path,
+                ),
+            )
+        )
+
+    return profile
+
+def recent_topic_accuracy(
+    topic: str,
+    db_path: str = "data/user/again.db",
+) -> float | None:
+    """Return accuracy for a topic in its most recent sitting."""
+    with connect(db_path) as connection:
+        row = connection.execute(
+            """
+            SELECT
+                SUM(responses.is_correct) AS correct,
+                COUNT(*) AS attempts
+            FROM responses
+            JOIN items ON items.id = responses.item_id
+            JOIN sittings ON sittings.id = responses.sitting_id
+            WHERE items.topic = ?
+              AND sittings.id = (
+                  SELECT sittings.id
+                  FROM responses
+                  JOIN items ON items.id = responses.item_id
+                  JOIN sittings ON sittings.id = responses.sitting_id
+                  WHERE items.topic = ?
+                  ORDER BY sittings.taken_on DESC, sittings.id DESC
+                  LIMIT 1
+              )
+            """,
+            (topic, topic),
+        ).fetchone()
+
+    if row["attempts"] == 0:
+        return None
+
+    return int(row["correct"] or 0) / int(row["attempts"])

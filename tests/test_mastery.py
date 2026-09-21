@@ -2,6 +2,7 @@ from again.mastery.profile import (
     MasteryEstimate,
     build_mastery_profile,
     estimate_mastery,
+    recent_topic_accuracy,
 )
 
 
@@ -57,3 +58,8 @@ def test_estimate_mastery_rejects_invalid_correct_count():
             attempts=3,
             correct=4,
         )
+
+def test_recent_topic_accuracy():
+    accuracy = recent_topic_accuracy("Linear equations")
+
+    assert accuracy == 0.0
