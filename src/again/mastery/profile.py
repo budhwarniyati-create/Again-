@@ -16,6 +16,7 @@ class MasteryEstimate:
     confidence: float
     status: str
     recent_accuracy: float | None = None
+    trend: str = "stable"
 
 
 @dataclass(frozen=True)
@@ -102,6 +103,10 @@ def build_mastery_profile(
                     row["topic"],
                     db_path,
                 ),
+                trend=topic_mastery_trend(
+                        row["topic"],
+                        db_path,
+                ),
             )
         )
 
@@ -139,3 +144,42 @@ def recent_topic_accuracy(
         return None
 
     return int(row["correct"] or 0) / int(row["attempts"])
+
+def topic_mastery_trend(
+    topic: str,
+    db_path: str = "data/user/again.db",
+) -> str:
+    """Classify recent topic performance as improving, stable, or declining."""
+    with connect(db_path) as connection:
+        rows = connection.execute(
+            """
+            SELECT
+                sittings.id AS sitting_id,
+                SUM(responses.is_correct) AS correct,
+                COUNT(*) AS attempts
+            FROM responses
+            JOIN items ON items.id = responses.item_id
+            JOIN sittings ON sittings.id = responses.sitting_id
+            WHERE items.topic = ?
+            GROUP BY sittings.id
+            ORDER BY sittings.taken_on DESC, sittings.id DESC
+            LIMIT 2
+            """,
+            (topic,),
+        ).fetchall()
+
+    if len(rows) < 2:
+        return "stable"
+
+    recent = int(rows[0]["correct"] or 0) / int(rows[0]["attempts"])
+    previous = int(rows[1]["correct"] or 0) / int(rows[1]["attempts"])
+
+    delta = recent - previous
+
+    if delta > 0.10:
+        return "improving"
+
+    if delta < -0.10:
+        return "declining"
+
+    return "stable"

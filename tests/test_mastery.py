@@ -63,3 +63,10 @@ def test_recent_topic_accuracy():
     accuracy = recent_topic_accuracy("Linear equations")
 
     assert accuracy == 0.0
+
+def test_topic_mastery_trend():
+    from again.mastery.profile import topic_mastery_trend
+
+    trend = topic_mastery_trend("Linear equations")
+
+    assert trend == "stable"
