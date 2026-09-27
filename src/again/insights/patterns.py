@@ -161,3 +161,35 @@ def get_learning_insights(
     insights.extend(section_accuracy_drop_insights(db_path))
 
     return insights
+
+def mastery_status_insights(
+    db_path: Path | str = "data/user/again.db",
+) -> list[LearningInsight]:
+    """Convert mastery estimates into structured learning insights."""
+    from again.mastery.profile import build_mastery_profile
+
+    profile = build_mastery_profile(db_path)
+
+    return [
+        LearningInsight(
+            pattern_type="mastery_status",
+            subject=None,
+            topic=estimate.topic,
+            message=(
+                f"{estimate.topic} mastery is "
+                f"{estimate.status} at {estimate.mastery:.1%}."
+            ),
+            evidence={
+                "mastery": estimate.mastery,
+                "confidence": estimate.confidence,
+                "status": estimate.status,
+                "recent_accuracy": (
+                    estimate.recent_accuracy
+                    if estimate.recent_accuracy is not None
+                    else 0.0
+                ),
+                "trend": estimate.trend,
+            },
+        )
+        for estimate in profile
+    ]
