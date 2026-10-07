@@ -4,8 +4,11 @@ from dataclasses import dataclass
 from pathlib import Path
 
 from again.patterns.detector import (
+    detect_repeated_miss_topics,
     detect_repeated_miss_topics_across_sittings,
+    detect_section_accuracy_drops,
     detect_topic_accuracy_drops,
+    detect_topic_regressions,
 )
 
 
@@ -18,6 +21,7 @@ class LearningInsight:
     topic: str | None
     message: str
     evidence: dict[str, str | int | float]
+    section: str | None = None
 
 
 def topic_accuracy_drop_insights(
@@ -30,6 +34,7 @@ def topic_accuracy_drop_insights(
         LearningInsight(
             pattern_type="topic_accuracy_drop",
             subject=None,
+            section=None,
             topic=row["topic"],
             message=(
                 f"Accuracy decreased for {row['topic']} from "
@@ -58,6 +63,7 @@ def repeated_miss_insights(
         LearningInsight(
             pattern_type="repeated_miss_across_sittings",
             subject=None,
+            section=None,
             topic=row["topic"],
             message=(
                 f"{row['topic']} was missed across "
@@ -70,18 +76,18 @@ def repeated_miss_insights(
         for row in misses
     ]
 
+
 def topic_regression_insights(
     db_path: Path | str = "data/user/again.db",
 ) -> list[LearningInsight]:
     """Convert topic regressions into structured learning insights."""
-    from again.patterns.detector import detect_topic_regressions
-
     regressions = detect_topic_regressions(db_path)
 
     return [
         LearningInsight(
             pattern_type="topic_regression",
             subject=None,
+            section=None,
             topic=row["topic"],
             message=(
                 f"{row['topic']} was answered correctly previously "
@@ -95,18 +101,18 @@ def topic_regression_insights(
         for row in regressions
     ]
 
+
 def section_accuracy_drop_insights(
     db_path: Path | str = "data/user/again.db",
 ) -> list[LearningInsight]:
     """Convert section accuracy drops into structured learning insights."""
-    from again.patterns.detector import detect_section_accuracy_drops
-
     drops = detect_section_accuracy_drops(db_path)
 
     return [
         LearningInsight(
             pattern_type="section_accuracy_drop",
-            subject=row["section"],
+            subject=None,
+            section=row["section"],
             topic=None,
             message=(
                 f"{row['section']} accuracy decreased from "
@@ -124,18 +130,18 @@ def section_accuracy_drop_insights(
         for row in drops
     ]
 
+
 def repeated_miss_topic_insights(
     db_path: Path | str = "data/user/again.db",
 ) -> list[LearningInsight]:
     """Convert repeated misses within topics into structured insights."""
-    from again.patterns.detector import detect_repeated_miss_topics
-
     misses = detect_repeated_miss_topics(db_path)
 
     return [
         LearningInsight(
             pattern_type="repeated_miss_topic",
             subject=None,
+            section=None,
             topic=row["topic"],
             message=(
                 f"{row['topic']} was missed "
@@ -147,6 +153,7 @@ def repeated_miss_topic_insights(
         )
         for row in misses
     ]
+
 
 def get_learning_insights(
     db_path: Path | str = "data/user/again.db",
@@ -162,6 +169,7 @@ def get_learning_insights(
 
     return insights
 
+
 def mastery_status_insights(
     db_path: Path | str = "data/user/again.db",
 ) -> list[LearningInsight]:
@@ -174,6 +182,7 @@ def mastery_status_insights(
         LearningInsight(
             pattern_type="mastery_status",
             subject=None,
+            section=None,
             topic=estimate.topic,
             message=(
                 f"{estimate.topic} mastery is "

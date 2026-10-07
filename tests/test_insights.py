@@ -5,6 +5,7 @@ def test_mastery_insight_is_structured():
     insight = LearningInsight(
         pattern_type="mastery_status",
         subject=None,
+        section=None,
         topic="Linear equations",
         message="Linear equations mastery is established.",
         evidence={

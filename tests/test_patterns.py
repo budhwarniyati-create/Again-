@@ -332,6 +332,7 @@ def test_learning_insight_model():
     insight = LearningInsight(
         pattern_type="topic_accuracy_drop",
         subject="Math",
+        section=None,
         topic="Linear equations",
         message="Accuracy decreased on Linear equations.",
         evidence={
@@ -501,7 +502,8 @@ def test_section_accuracy_drop_insights(tmp_path):
 
     assert len(insights) == 1
     assert insights[0].pattern_type == "section_accuracy_drop"
-    assert insights[0].subject == "Math"
+    assert insights[0].section == "Math"
+    assert insights[0].subject is None
     assert insights[0].evidence["accuracy_delta"] == -0.5
 
 def test_repeated_miss_topic_insights(tmp_path):
