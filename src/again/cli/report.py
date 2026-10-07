@@ -9,6 +9,7 @@ from again.analytics.baseline import (
     overall_accuracy,
     repeated_misses,
 )
+from again.diagnosis import build_diagnoses
 from again.insights.patterns import get_learning_insights
 from again.mastery.profile import build_mastery_profile
 from again.patterns.detector import (
@@ -147,6 +148,18 @@ def print_report(db_path="data/user/again.db") -> None:
     else:
         for insight in insights:
             print(f"  [{insight.pattern_type}] {insight.message}")
+
+    diagnoses = build_diagnoses(db_path)
+
+    print("\nDiagnoses:")
+    if not diagnoses:
+        print("  None detected.")
+    else:
+        for diagnosis in diagnoses:
+            print(
+                f"  [{diagnosis.diagnosis_type} | {diagnosis.confidence}] "
+                f"{diagnosis.message}"
+            )
 
     mastery_profile = build_mastery_profile(db_path)
 
